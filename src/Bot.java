@@ -1,3 +1,4 @@
+import org.ho.yaml.Yaml;
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
@@ -6,8 +7,15 @@ import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.*;
+
 public class Bot extends TelegramLongPollingBot
 {
+    private List botCommands;
+    private Map botPhrases;
+
     public static void main( String[] args )
     {
         ApiContextInitializer.init(); // Инициализируем апи
@@ -30,14 +38,23 @@ public class Bot extends TelegramLongPollingBot
     @Override
     public void onUpdateReceived( Update message )
     {
-        if( message.getMessage() != null )
+        botCommands = getBotCommands();
+        botPhrases = getBotPhrases();
+        System.out.println( botCommands.toString() );
+        for( Iterator iter = botPhrases.keySet().iterator(); iter.hasNext(); )
         {
-            switch( message.getMessage().getText() )
+            System.out.println( botPhrases.get( iter.next() ) );
+        }
+        if( message.getMessage() != null && botCommands != null )
+        {
+            String recivedMessageText = message.getMessage().getText();
+            System.out.println( recivedMessageText );
+            if( botCommands.contains( recivedMessageText ) )
             {
-                case "/help": sendMsg( message.getMessage(), "Для справки набери /help\nДля приветственного сообщения набери /start" ); break;
-                case "/start": sendMsg( message.getMessage(), "Таки здравствуйте ＼(⌒▽⌒)／\nНабери /help, чтобы узнать, что я умею." ); break;
-
-                default: sendMsg( message.getMessage(), "¯|_(ツ)_/¯" );
+                String botAnswer = botPhrases.get( recivedMessageText ) != null ?
+                                        (String)botPhrases.get( recivedMessageText )
+                                      : "¯|_(ツ)_/¯";
+                sendMsg( message.getMessage(), botAnswer );
             }
         }
     }
@@ -60,9 +77,38 @@ public class Bot extends TelegramLongPollingBot
         try
         {
             execute( sendMessage );
-        } catch ( TelegramApiException e )
+        }
+        catch( TelegramApiException e )
         {
             e.printStackTrace();
         }
+    }
+
+    private List getBotCommands()
+    {
+        try
+        {
+            List entry = Yaml.loadType( new File( "configurations/botCommands.yml" ), ArrayList.class );
+            return entry;
+        }
+        catch( FileNotFoundException e )
+        {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private Map getBotPhrases()
+    {
+        try
+        {
+            Map entry = Yaml.loadType( new File( "configurations/botPhrases.yml" ), HashMap.class );
+            return entry;
+        }
+        catch( FileNotFoundException e )
+        {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
