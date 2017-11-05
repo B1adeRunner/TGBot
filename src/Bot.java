@@ -35,26 +35,29 @@ public class Bot extends TelegramLongPollingBot
         //возвращаем юзера
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void onUpdateReceived( Update message )
     {
         botCommands = getBotCommands();
         botPhrases = getBotPhrases();
-        System.out.println( botCommands.toString() );
-        for( Iterator iter = botPhrases.keySet().iterator(); iter.hasNext(); )
-        {
-            System.out.println( botPhrases.get( iter.next() ) );
-        }
-        if( message.getMessage() != null && botCommands != null )
+        //System.out.println( botCommands.toString() );
+        if( botPhrases != null )
+            botPhrases.forEach( (k,v) -> System.out.println( v ) );
+        if( message.getMessage() != null && botCommands != null && botPhrases != null )
         {
             String recivedMessageText = message.getMessage().getText();
-            System.out.println( recivedMessageText );
+            //System.out.println( recivedMessageText );
             if( botCommands.contains( recivedMessageText ) )
             {
                 String botAnswer = botPhrases.get( recivedMessageText ) != null ?
                                         (String)botPhrases.get( recivedMessageText )
                                       : "¯|_(ツ)_/¯";
-                sendMsg( message.getMessage(), botAnswer );
+                sendMessage( message.getMessage(), botAnswer );
+            }
+            else if( recivedMessageText.startsWith( "/" ) )
+            {
+                sendMessage( message.getMessage(), "я не знаю этой команды ⊙︿⊙ " );
             }
         }
     }
@@ -66,14 +69,14 @@ public class Bot extends TelegramLongPollingBot
         //Токен бота
     }
 
-    private void sendMsg( Message message, String text )
+    private void sendMessage( Message message, String text )
     {
         SendMessage sendMessage = new SendMessage();
         sendMessage.enableMarkdown( true );
         sendMessage.setChatId( message.getChatId().toString() );
         sendMessage.setReplyToMessageId( message.getMessageId() );
         sendMessage.setText( text );
-        System.out.println( message.getFrom() );
+        //System.out.println( message.getFrom() );
         try
         {
             execute( sendMessage );
@@ -88,8 +91,7 @@ public class Bot extends TelegramLongPollingBot
     {
         try
         {
-            List entry = Yaml.loadType( new File( "configurations/botCommands.yml" ), ArrayList.class );
-            return entry;
+            return Yaml.loadType( new File( "configurations/botCommands.yml" ), ArrayList.class );
         }
         catch( FileNotFoundException e )
         {
@@ -102,13 +104,27 @@ public class Bot extends TelegramLongPollingBot
     {
         try
         {
-            Map entry = Yaml.loadType( new File( "configurations/botPhrases.yml" ), HashMap.class );
-            return entry;
+            return Yaml.loadType( new File( "configurations/botPhrases.yml" ), HashMap.class );
         }
         catch( FileNotFoundException e )
         {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private void getBirthDaysToDay()
+    {
+
+    }
+
+    private void getDollarExchangeRate()
+    {
+
+    }
+
+    private void getBitCoinExchangeRate()
+    {
+
     }
 }
