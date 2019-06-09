@@ -3,6 +3,10 @@
    allCommands:
               - /help
               - /start
+              - /boobs
+              - /butts
+              - /butts@AgentSmitBot
+              - /boobs@AgentSmitBot
 
    privateUserCommands:
               - /help
