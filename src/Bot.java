@@ -11,7 +11,11 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +42,7 @@ public class Bot extends TelegramLongPollingBot {
 
     public Bot() {
         try {
-            Map connectionSettings = Yaml.loadType(new File("connectionProfile.yml"), HashMap.class);
+            Map connectionSettings = Yaml.loadType(new File("src/resources/connectionProfile.yml"), HashMap.class);
             //connectionSettings.forEach( ( k, v ) -> System.out.println( k.toString() + ": " + v ) );
             url = (String) connectionSettings.get("url");
             userName = (String) connectionSettings.get("user_name");
@@ -123,7 +127,7 @@ public class Bot extends TelegramLongPollingBot {
     @SuppressWarnings("unchecked")
     private void updateBotCommands() {
         try {
-            List botCommands = Yaml.loadType(new File("configurations/botCommands.yml"), ArrayList.class);
+            List botCommands = Yaml.loadType(new File("src/resources/botCommands.yml"), ArrayList.class);
             allCommands = (List) (((Map) (botCommands.get(0))).get("allCommands"));
             privateUserCommands = (List) (((Map) (botCommands.get(0))).get("privateUserCommands"));
         } catch (FileNotFoundException e) {
@@ -133,7 +137,7 @@ public class Bot extends TelegramLongPollingBot {
 
     private void updateBotPhrases() {
         try {
-            botPhrases = Yaml.loadType(new File("configurations/botPhrases.yml"), HashMap.class);
+            botPhrases = Yaml.loadType(new File("src/resources/botPhrases.yml"), HashMap.class);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -158,13 +162,13 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     private void commandProcess(Message message) {
-        String recivedMessageText = message.getText() != null ? message.getText() : "";
-        if (allCommands.contains(recivedMessageText)) {
-            Boolean isNeedToAnswerUserPrivately = privateUserCommands.contains(recivedMessageText);
+        String receivedMessageText = message.getText() != null ? message.getText() : "";
+        if (allCommands.contains(receivedMessageText)) {
+            Boolean isNeedToAnswerUserPrivately = privateUserCommands.contains(receivedMessageText);
             sendOpenBoobsContent(message);
-            //String botAnswer = botPhrases.get(recivedMessageText) != null ? (String) botPhrases.get(recivedMessageText) : "¯|_(ツ)_/¯";
+            //String botAnswer = botPhrases.get(receivedMessageText) != null ? (String) botPhrases.get(receivedMessageText) : "¯|_(ツ)_/¯";
             //sendMessage(message, botAnswer, isNeedToAnswerUserPrivately);
-        } else if (recivedMessageText.startsWith("/")) {
+        } else if (receivedMessageText.startsWith("/")) {
             sendMessage(message, "я не знаю этой команды ⊙︿⊙ ", false);
             //TODO: прикруть логер сюда и выводить то, что пришло в лог
         }
