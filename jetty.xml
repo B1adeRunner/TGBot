@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "http://www.eclipse.org/jetty/configure.dtd">
+
+<Configure id="Server" class="org.eclipse.jetty.server.Server">
+    <New id="taskExecutor" class="org.eclipse.jetty.plus.jndi.Resource">
+        <Arg></Arg>
+        <Arg>jndi/taskExecutor</Arg>
+        <Arg>
+            <New class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+                <Set name="User">postgres</Set>
+                <Set name="Password">1q2w3e4r</Set>
+                <Set name="DatabaseName">postgres</Set>
+                <Set name="ServerName">localhost</Set>
+                <Set name="PortNumber">5432</Set>
+            </New>
+        </Arg>
+    </New>
+</Configure>

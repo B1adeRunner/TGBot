@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="TGBot:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/TGBot_jar</output-path>
+    <root id="archive" name="TGBot_jar.jar">
+      <element id="module-output" name="TGBot" />
+      <element id="extracted-dir" path="$USER_HOME$/Downloads/lombok.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/jyaml-1.3.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/telegrambots-3.4-jar-with-dependencies.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/Downloads/jsoup-1.12.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/mysql-connector-java-5.1.44-bin.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

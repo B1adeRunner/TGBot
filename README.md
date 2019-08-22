@@ -1,2 +1,2 @@
 # TGBot
-telegram bot
+The "SkyNet" Telegram bot 
