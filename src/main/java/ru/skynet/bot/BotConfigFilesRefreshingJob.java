@@ -1,5 +1,6 @@
 package ru.skynet.bot;
 
+import lombok.extern.slf4j.Slf4j;
 import org.ho.yaml.Yaml;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -12,31 +13,42 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Component
 public class BotConfigFilesRefreshingJob {
-    public BotConfigFilesRefreshingJob(@Qualifier("botCommands") List botCommands,
-                                       @Qualifier("allCommands") List allCommands,
-                                       @Qualifier("privateUserCommands") List privateUserCommands,
-                                       @Qualifier("botPhrases") Map botPhrases) {
-        this.botCommands = botCommands;
+    private static final long MILISECONDS_PER_MINUTE = 60000;
+
+    public BotConfigFilesRefreshingJob(@Qualifier("permissions") List<String> permissions,
+                                       @Qualifier("allCommands") List<String> allCommands,
+                                       @Qualifier("privateUserCommands") List<String> privateUserCommands,
+                                       @Qualifier("botPhrases") Map<String, String> botPhrases) {
         this.allCommands = allCommands;
+        this.permissions = permissions;
         this.privateUserCommands = privateUserCommands;
         this.botPhrases = botPhrases;
     }
 
-    private List botCommands;
-    private List allCommands;
-    private List privateUserCommands;
-    private Map botPhrases;
+    private volatile List<Map<String, List<String>>> botCommands;
+    private volatile List<String> permissions;
+    private volatile List<String> allCommands;
+    private volatile List<String> privateUserCommands;
+    private volatile Map<String, String> botPhrases;
 
-    @Scheduled(fixedDelay = 100000)
-    private void updateBotCommands() {
+    @Scheduled(fixedDelay = MILISECONDS_PER_MINUTE, initialDelay = 0)
+    public void updateBotCommands() {
         try {
+            log.info("Start of bot configuration parsing");
             //TODO: вынести путь файлов в jvm переменные
-            botCommands = Yaml.loadType(new File("src/resources/botCommands.yml"), ArrayList.class);
-            botPhrases = Yaml.loadType(new File("src/resources/botPhrases.yml"), HashMap.class);
-            allCommands = (List) (((Map) (botCommands.get(0))).get("allCommands"));
-            privateUserCommands = (List) (((Map) (botCommands.get(0))).get("privateUserCommands"));
+            botCommands = Yaml.loadType(new File("resources/botCommands.yml"), ArrayList.class);
+            botPhrases.putAll(Yaml.loadType(new File("resources/botPhrases.yml"), HashMap.class));
+            permissions.clear();
+            permissions.addAll((List<String>) Yaml.loadType(new File("resources/permissions.yml"), ArrayList.class));
+            permissions.forEach(x -> log.debug(String.valueOf(x)));
+            List<String> tmpAllCmd = botCommands.get(0).get("allCommands");
+            allCommands.clear();
+            allCommands.addAll(tmpAllCmd);
+            privateUserCommands.addAll((List<String>) (((Map) (botCommands.get(0))).get("privateUserCommands")));
+            log.info("End of bot configuration parsing");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }

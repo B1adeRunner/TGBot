@@ -15,8 +15,9 @@ import java.util.List;
 
 @Slf4j
 @Component
-//TODO: возможно сделать джоб на периодическое обновление реестра фоток с сайта
 public class OpenContentParser {
+    private static final long MILISECONDS_PER_MINUTE = 60000;
+
     @Autowired
     public OpenContentParser(@Qualifier("buttsContent")List<OpenBoobsContent> buttsContent,
                              @Qualifier("boobsContent")List<OpenBoobsContent> boobsContent) {
@@ -35,15 +36,14 @@ public class OpenContentParser {
     private static final String BOOBS_URL_PART = "http://oboobs.ru/";
     private static final String BUTTS_URL_PART = "http://obutts.ru/";
 
-    @Scheduled(fixedDelay = 1)
+    @Scheduled(fixedDelay = MILISECONDS_PER_MINUTE * 60 * 12, initialDelay = 0)
     public void doParseBoobs() {
         log.info("Boobs data fetching start");
         doParse(MAX_BOOBS_PAGE_NUMBER, boobsContent, BOOBS_URL_PART);
         log.info("Boobs data fetching end");
-        System.out.println("dddddddddddddddddddd");
     }
 
-    @Scheduled(fixedDelay = 1000000)
+    @Scheduled(fixedDelay = MILISECONDS_PER_MINUTE * 60 * 12, initialDelay = 0)
     public void doParseButts() {
         log.info("Butts data fetching start");
         doParse(MAX_BUTTS_PAGE_NUMBER, buttsContent, BUTTS_URL_PART);
@@ -60,14 +60,13 @@ public class OpenContentParser {
                 if (MIN_CONTENT_RANK <= getContentRank(element)) {
                     contents.add(OpenBoobsContent.builder()
                             .url(getConcretePageAddress(element))
-                            .type(contentUrlPart.contains("boobs") ? OpenBoobsContentType.BOOBS : OpenBoobsContentType.BUTTS)
+                            .type(contentUrlPart.contains("boobs") ? ContentType.BOOBS : ContentType.BUTTS)
                             .rank(getContentRank(element))
                             .build());
-                    System.out.println("dddddddddddddddddddd");
                 }
             }
         }
-        contents.forEach(content -> log.info(content.toString()));
+        contents.forEach(content -> log.debug(content.toString()));
     }
 
     private String getConcretePageAddress(Element element) {
@@ -77,7 +76,7 @@ public class OpenContentParser {
     }
 
     private int getContentRank(Element element) {
-        return Integer.valueOf(element.childNodes().get(1).childNode(3)
+        return Integer.parseInt(element.childNodes().get(1).childNode(3)
                 .childNode(0).toString().split("\n")[1]);
     }
 

@@ -4,6 +4,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.telegram.telegrambots.meta.TelegramBotsApi;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.telegram.telegrambots.meta.generics.BotSession;
 import ru.skynet.bot.service.boobs.OpenBoobsContent;
 
 import java.util.ArrayList;
@@ -15,6 +18,8 @@ import java.util.Map;
 @EnableScheduling
 @Configuration
 public class ApplicationConfig {
+    private BotSession botSession;
+
     @Bean
     public List<OpenBoobsContent> boobsContent() {
         return new ArrayList<>();
@@ -26,22 +31,42 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public List allCommands() {
-        return new ArrayList();
+    public List<String> allCommands() {
+        return new ArrayList<>();
     }
 
     @Bean
-    public List privateUserCommands() {
-        return new ArrayList();
+    public List<String> privateUserCommands() {
+        return new ArrayList<>();
     }
 
     @Bean
-    public Map botPhrases() {
-        return new HashMap();
+    public Map<String, String> botPhrases() {
+        return new HashMap<>();
     }
 
     @Bean
-    public List botCommands() {
-        return new ArrayList();
+    public List<Map<String, List<String>>> botCommands() {
+        return new ArrayList<>();
+    }
+
+    @Bean
+    public List<String> permissions() {
+        return new ArrayList<>();
+    }
+
+    @Bean
+    public void initAll() {
+        BotCommandsProcessor processor = new BotCommandsProcessor(boobsContent(), buttsContent(),
+                allCommands(), privateUserCommands(), botPhrases(), permissions());
+        IncomingMessageAnalyser analyser = new IncomingMessageAnalyser(processor);
+        TelegramBotsApi botAPI = new TelegramBotsApi();
+        try {
+            if (botSession == null) {
+                botSession = botAPI.registerBot(new TelegramBotImpl(analyser));
+            }
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
     }
 }

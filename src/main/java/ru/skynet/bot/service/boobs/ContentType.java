@@ -1,6 +1,6 @@
 package ru.skynet.bot.service.boobs;
 
-public enum OpenBoobsContentType {
+public enum ContentType {
     BOOBS,
     BUTTS
 }

@@ -10,5 +10,5 @@ import lombok.ToString;
 public class OpenBoobsContent {
     private String url;
     private int rank;
-    private OpenBoobsContentType type;
+    private ContentType type;
 }
