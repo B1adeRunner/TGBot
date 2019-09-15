@@ -3,7 +3,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.1'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:5.1.0'
     }
 }
 apply plugin: 'com.github.johnrengelman.shadow'
@@ -33,10 +33,9 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.8'
     implementation group: 'org.jsoup', name: 'jsoup', version: '1.12.1'
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.26'
-    implementation group: 'org.apache.logging.log4j', name: 'log4j', version: '2.12.0', ext: 'pom'
     implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
     implementation group: 'ch.qos.logback', name: 'logback-core', version: '1.2.3'
-    implementation group: 'com.github.jengelman.gradle.plugins', name: 'shadow', version: '2.0.1'
+    implementation group: 'com.github.jengelman.gradle.plugins', name: 'shadow', version: '5.1.0'
 
     implementation group: 'org.springframework', name: 'spring-core', version: '5.1.8.RELEASE'
     implementation group: 'org.springframework', name: 'spring-webmvc', version: '5.1.8.RELEASE'
