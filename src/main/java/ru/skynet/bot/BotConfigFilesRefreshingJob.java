@@ -7,11 +7,13 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 @Slf4j
 @Component
@@ -21,11 +23,13 @@ public class BotConfigFilesRefreshingJob {
     public BotConfigFilesRefreshingJob(@Qualifier("permissions") List<String> permissions,
                                        @Qualifier("allCommands") List<String> allCommands,
                                        @Qualifier("privateUserCommands") List<String> privateUserCommands,
-                                       @Qualifier("botPhrases") Map<String, String> botPhrases) {
+                                       @Qualifier("botPhrases") Map<String, String> botPhrases,
+                                       @Qualifier("settings") Properties settings) {
         this.allCommands = allCommands;
         this.permissions = permissions;
         this.privateUserCommands = privateUserCommands;
         this.botPhrases = botPhrases;
+        this.settings = settings;
     }
 
     private volatile List<Map<String, List<String>>> botCommands;
@@ -33,9 +37,10 @@ public class BotConfigFilesRefreshingJob {
     private volatile List<String> allCommands;
     private volatile List<String> privateUserCommands;
     private volatile Map<String, String> botPhrases;
+    private volatile Properties settings;
 
     @Scheduled(fixedDelay = MILISECONDS_PER_MINUTE, initialDelay = 0)
-    public void updateBotCommands() {
+    public void updateConfigurations() {
         try {
             log.info("Start of bot configuration parsing");
             //TODO: вынести путь файлов в jvm переменные
@@ -48,8 +53,13 @@ public class BotConfigFilesRefreshingJob {
             allCommands.clear();
             allCommands.addAll(tmpAllCmd);
             privateUserCommands.addAll((List<String>) (((Map) (botCommands.get(0))).get("privateUserCommands")));
+            FileInputStream fileInputStream = new FileInputStream("resources/settings.properties");
+            settings.clear();
+            if (fileInputStream != null) {
+                settings.load(fileInputStream);
+            }
             log.info("End of bot configuration parsing");
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

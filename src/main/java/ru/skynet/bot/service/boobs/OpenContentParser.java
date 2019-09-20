@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Properties;
 
 @Slf4j
 @Component
@@ -19,46 +20,53 @@ public class OpenContentParser {
     private static final long MILISECONDS_PER_MINUTE = 60000;
 
     @Autowired
-    public OpenContentParser(@Qualifier("buttsContent")List<OpenBoobsContent> buttsContent,
-                             @Qualifier("boobsContent")List<OpenBoobsContent> boobsContent) {
+    public OpenContentParser(@Qualifier("buttsContent") List<OpenBoobsContent> buttsContent,
+                             @Qualifier("boobsContent") List<OpenBoobsContent> boobsContent,
+                             @Qualifier("settings") Properties settings) {
         this.boobsContent = boobsContent;
         this.buttsContent = buttsContent;
+        this.settings = settings;
     }
 
     private List<OpenBoobsContent> buttsContent;
     private List<OpenBoobsContent> boobsContent;
+    private Properties settings;
 
     //TODO: вынести эти настройки в конфиг файл
     private static final String KEY_WORD = "iline";
-    private static final int MAX_BOOBS_PAGE_NUMBER = 648;
-    private static final int MAX_BUTTS_PAGE_NUMBER = 332;
-    private static final int MIN_CONTENT_RANK = 40;
     private static final String BOOBS_URL_PART = "http://oboobs.ru/";
     private static final String BUTTS_URL_PART = "http://obutts.ru/";
+    private static final int BOOBS_DATA_FETCHING_DELAY_MINUTES = 720;
+    private static final int BUTTS_DATA_FETCHING_DELAY_MINUTES = 720;
 
-    @Scheduled(fixedDelay = MILISECONDS_PER_MINUTE * 60 * 12, initialDelay = 0)
+    @Scheduled(fixedDelay = MILISECONDS_PER_MINUTE * BOOBS_DATA_FETCHING_DELAY_MINUTES, initialDelay = 10000)
     public void doParseBoobs() {
-        log.info("Boobs data fetching start");
-        doParse(MAX_BOOBS_PAGE_NUMBER, boobsContent, BOOBS_URL_PART);
-        log.info("Boobs data fetching end");
+        if (!settings.isEmpty()) {
+            log.info("Boobs data fetching start");
+            doParse(Integer.parseInt(settings.getProperty("maxBoobsPageNumber")), boobsContent, BOOBS_URL_PART);
+            log.info("Boobs data fetching end");
+        }
     }
 
-    @Scheduled(fixedDelay = MILISECONDS_PER_MINUTE * 60 * 12, initialDelay = 0)
+    @Scheduled(fixedDelay = MILISECONDS_PER_MINUTE * BUTTS_DATA_FETCHING_DELAY_MINUTES, initialDelay = 10000)
     public void doParseButts() {
-        log.info("Butts data fetching start");
-        doParse(MAX_BUTTS_PAGE_NUMBER, buttsContent, BUTTS_URL_PART);
-        log.info("Butts data fetching end");
+        if (!settings.isEmpty()) {
+            log.info("Butts data fetching start");
+            doParse(Integer.parseInt(settings.getProperty("maxButtsPageNumber")), buttsContent, BUTTS_URL_PART);
+            log.info("Butts data fetching end");
+        }
     }
 
     private void doParse(int pageMaxNumber, List<OpenBoobsContent> contents, String contentUrlPart) {
         for (int commonPageNum = 1; commonPageNum <= pageMaxNumber; commonPageNum++) {
             if (commonPageNum % 100 == 0) {
-                log.info(commonPageNum + " pages processed");
+                log.info("Content type: " + contents.get(0).getType() + ". " + commonPageNum + " pages processed");
             }
             Document commonContentPage = defineCommonContentPageList(defineCommonContentPageUrl(contentUrlPart, commonPageNum));
             for (Element element : getPageElementsByKey(commonContentPage)) {
-                if (MIN_CONTENT_RANK <= getContentRank(element)) {
+                if (Integer.parseInt(settings.getProperty("minContentRank")) <= getContentRank(element)) {
                     contents.add(OpenBoobsContent.builder()
+                            .id(getContentId(element))
                             .url(getConcretePageAddress(element))
                             .type(contentUrlPart.contains("boobs") ? ContentType.BOOBS : ContentType.BUTTS)
                             .rank(getContentRank(element))
@@ -78,6 +86,13 @@ public class OpenContentParser {
     private int getContentRank(Element element) {
         return Integer.parseInt(element.childNodes().get(1).childNode(3)
                 .childNode(0).toString().split("\n")[1]);
+    }
+
+    private int getContentId(Element element) {
+        return Integer.parseInt(element.getElementsByTag("a").get(2)
+                .getElementsByAttribute("href")
+                .attr("href")
+                .split("/")[2]);
     }
 
     private String defineCommonContentPageUrl(String contentUrlPart, int pageNum) {
