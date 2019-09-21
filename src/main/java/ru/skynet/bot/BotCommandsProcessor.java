@@ -10,8 +10,8 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.skynet.bot.core.AnswerType;
 import ru.skynet.bot.core.AnswerWrapper;
 import ru.skynet.bot.core.PrimitiveContent;
-import ru.skynet.bot.service.boobs.ContentType;
-import ru.skynet.bot.service.boobs.OpenBoobsContent;
+import ru.skynet.bot.service.opencontent.ContentType;
+import ru.skynet.bot.service.opencontent.OpenBoobsContent;
 
 import java.util.List;
 import java.util.Map;

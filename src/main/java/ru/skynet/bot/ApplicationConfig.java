@@ -9,7 +9,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.BotSession;
-import ru.skynet.bot.service.boobs.OpenBoobsContent;
+import ru.skynet.bot.service.opencontent.OpenBoobsContent;
 
 import java.io.FileInputStream;
 import java.io.IOException;

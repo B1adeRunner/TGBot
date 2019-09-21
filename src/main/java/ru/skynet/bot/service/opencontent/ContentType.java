@@ -1,4 +1,4 @@
-package ru.skynet.bot.service.boobs;
+package ru.skynet.bot.service.opencontent;
 
 public enum ContentType {
     BOOBS,
