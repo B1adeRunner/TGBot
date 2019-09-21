@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @Getter
@@ -52,9 +53,7 @@ public class PrimitiveContent {
             "(_Мы_) - Мы в жопе:",
             "к(_!_)Э - жопа с ушами",
             "c( o ) - жопа с ручкой",
-            "(_!_)(___!___)(_!_)(__!__) - кинотеатр"
-    );
-    public static List<String> boobsPrimitiveContent = Arrays.asList(
-            "(.)(.) - просто сиси"
-    );
+            "(_!_)(___!___)(_!_)(__!__) - кинотеатр");
+
+    public static List<String> boobsPrimitiveContent = Collections.singletonList("(.)(.) - просто сиси");
 }

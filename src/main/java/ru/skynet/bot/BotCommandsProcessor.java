@@ -15,6 +15,7 @@ import ru.skynet.bot.service.boobs.OpenBoobsContent;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import static ru.skynet.bot.core.PrimitiveContent.boobsPrimitiveContent;
@@ -22,31 +23,37 @@ import static ru.skynet.bot.core.PrimitiveContent.buttsPrimitiveContent;
 
 @Component
 public class BotCommandsProcessor {
-    private static final int BUFFER_CAPACITY = 50;
-
     private volatile List allCommands;
     private volatile List privateUserCommands;
     private volatile Map botPhrases;
     private volatile List<OpenBoobsContent> boobsContent;
     private volatile List<OpenBoobsContent> buttsContent;
     private volatile List<String> permissions;
-    private ArrayBlockingQueue<String> openBoobsQueue = new ArrayBlockingQueue<>(BUFFER_CAPACITY);
-    private ArrayBlockingQueue<String> openButtsQueue = new ArrayBlockingQueue<>(BUFFER_CAPACITY);
-    private ArrayBlockingQueue<String> boobsQueue = new ArrayBlockingQueue<>(BUFFER_CAPACITY);
-    private ArrayBlockingQueue<String> buttsQueue = new ArrayBlockingQueue<>(BUFFER_CAPACITY);
+    private volatile Properties settings;
+    private ArrayBlockingQueue<String> openBoobsQueue;
+    private ArrayBlockingQueue<String> openButtsQueue;
+    private ArrayBlockingQueue<String> boobsQueue;
+    private ArrayBlockingQueue<String> buttsQueue;
 
     public BotCommandsProcessor(@Qualifier("boobsContent") List<OpenBoobsContent> boobsContent,
                                 @Qualifier("buttsContent") List<OpenBoobsContent> buttsContent,
                                 @Qualifier("allCommands") List allCommands,
                                 @Qualifier("privateUserCommands") List privateUserCommands,
                                 @Qualifier("botPhrases") Map botPhrases,
-                                @Qualifier("permissions") List<String> permissions) {
+                                @Qualifier("permissions") List<String> permissions,
+                                @Qualifier("settings") Properties settings) {
         this.boobsContent = boobsContent;
         this.buttsContent = buttsContent;
         this.allCommands = allCommands;
         this.privateUserCommands = privateUserCommands;
         this.botPhrases = botPhrases;
         this.permissions = permissions;
+        this.settings = settings;
+        int bufferCapacity = Integer.parseInt(settings.getProperty("bufferCapacity"));
+        openBoobsQueue = new ArrayBlockingQueue<>(bufferCapacity);
+        openButtsQueue = new ArrayBlockingQueue<>(bufferCapacity);
+        boobsQueue = new ArrayBlockingQueue<>(bufferCapacity);
+        buttsQueue = new ArrayBlockingQueue<>(bufferCapacity);
     }
 
     public AnswerWrapper commandProcess(Update message) {
@@ -57,14 +64,14 @@ public class BotCommandsProcessor {
         if (allCommands.contains(receivedMessageText)) {
             if (isVipChat && !boobsContent.isEmpty() && !buttsContent.isEmpty()) {
                 return new AnswerWrapper(AnswerType.PARTIAL_BOT_API_METHOD,
-                        sendOpenBoobsContent(message.getMessage()));
+                                         sendOpenBoobsContent(message.getMessage()));
             } else {
                 return new AnswerWrapper(AnswerType.BOT_API_METHOD,
-                        sendPrimitiveContent(message.getMessage()));
+                                         sendPrimitiveContent(message.getMessage()));
             }
         }
         return new AnswerWrapper(AnswerType.BOT_API_METHOD,
-                sendMessage(message.getMessage(), "i dont know this command", false));
+                                 sendMessage(message.getMessage(), "i dont know this command", false));
     }
 
     private ContentType definePrimitiveContent(Message msg) {
@@ -97,9 +104,9 @@ public class BotCommandsProcessor {
         String val;
         do {
             val = getRandomValue(content, content.size() - 1);
-        } while(queue.contains(val));
+        } while (queue.contains(val));
 
-        if(!queue.offer(val)) {
+        if (!queue.offer(val)) {
             queue.poll();
             queue.offer(val);
         }
@@ -110,9 +117,9 @@ public class BotCommandsProcessor {
         OpenBoobsContent val;
         do {
             val = getRandomValue(content, content.size() - 1);
-        } while(queue.contains(val.getUrl()));
+        } while (queue.contains(val.getUrl()));
 
-        if(!queue.offer(val.getUrl())) {
+        if (!queue.offer(val.getUrl())) {
             queue.poll();
             queue.offer(val.getUrl());
         }
@@ -138,7 +145,7 @@ public class BotCommandsProcessor {
         return sendMessage;
     }
 
-    private PartialBotApiMethod sendMessage(Message message, String text, Boolean isNeedToAnswerUserPrivately) {
+    private PartialBotApiMethod sendMessage(Message message, String text, boolean isNeedToAnswerUserPrivately) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.enableMarkdown(true);
         sendMessage.setChatId(message.getChatId().toString());

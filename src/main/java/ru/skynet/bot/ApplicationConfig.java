@@ -1,5 +1,6 @@
 package ru.skynet.bot;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +11,8 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.BotSession;
 import ru.skynet.bot.service.boobs.OpenBoobsContent;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +22,7 @@ import java.util.Properties;
 @ComponentScan
 @EnableScheduling
 @Configuration
+@Slf4j
 public class ApplicationConfig {
     private BotSession botSession;
 
@@ -59,11 +63,17 @@ public class ApplicationConfig {
 
     @Bean
     public Properties settings() {
-        return new Properties();
+        Properties properties = new Properties();
+        try (FileInputStream fileInputStream = new FileInputStream("resources/settings.properties")) {
+            properties.load(fileInputStream);
+        } catch (IOException e) {
+            log.error("Error while settings parsing, " + e);
+        }
+        return properties;
     }
 
     @Bean
-    public ThreadPoolTaskScheduler threadPoolTaskScheduler(){
+    public ThreadPoolTaskScheduler threadPoolTaskScheduler() {
         ThreadPoolTaskScheduler threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
         threadPoolTaskScheduler.setPoolSize(10);
         threadPoolTaskScheduler.setThreadNamePrefix("ThreadPoolTaskScheduler");
@@ -73,15 +83,16 @@ public class ApplicationConfig {
     @Bean
     public void initAll() {
         BotCommandsProcessor processor = new BotCommandsProcessor(boobsContent(), buttsContent(),
-                allCommands(), privateUserCommands(), botPhrases(), permissions());
+                                                                  allCommands(), privateUserCommands(),
+                                                                  botPhrases(), permissions(), settings());
         IncomingMessageAnalyser analyser = new IncomingMessageAnalyser(processor);
         TelegramBotsApi botAPI = new TelegramBotsApi();
         try {
             if (botSession == null) {
-                botSession = botAPI.registerBot(new TelegramBotImpl(analyser));
+                botSession = botAPI.registerBot(new TelegramBotImpl(analyser, settings()));
             }
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            log.error("Registration bot error, " + e);
         }
     }
 }

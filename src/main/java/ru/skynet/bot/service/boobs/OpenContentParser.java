@@ -5,21 +5,20 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.annotation.SchedulingConfigurer;
+import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Properties;
 
 @Slf4j
 @Component
-public class OpenContentParser {
-    private static final long MILISECONDS_PER_MINUTE = 60000;
-
-    @Autowired
+public class OpenContentParser implements SchedulingConfigurer {
     public OpenContentParser(@Qualifier("buttsContent") List<OpenBoobsContent> buttsContent,
                              @Qualifier("boobsContent") List<OpenBoobsContent> boobsContent,
                              @Qualifier("settings") Properties settings) {
@@ -32,14 +31,11 @@ public class OpenContentParser {
     private List<OpenBoobsContent> boobsContent;
     private Properties settings;
 
-    //TODO: вынести эти настройки в конфиг файл
     private static final String KEY_WORD = "iline";
     private static final String BOOBS_URL_PART = "http://oboobs.ru/";
     private static final String BUTTS_URL_PART = "http://obutts.ru/";
-    private static final int BOOBS_DATA_FETCHING_DELAY_MINUTES = 720;
-    private static final int BUTTS_DATA_FETCHING_DELAY_MINUTES = 720;
 
-    @Scheduled(fixedDelay = MILISECONDS_PER_MINUTE * BOOBS_DATA_FETCHING_DELAY_MINUTES, initialDelay = 10000)
+    @Scheduled(fixedDelay = 1000000000000000000L)
     public void doParseBoobs() {
         if (!settings.isEmpty()) {
             log.info("Boobs data fetching start");
@@ -48,13 +44,28 @@ public class OpenContentParser {
         }
     }
 
-    @Scheduled(fixedDelay = MILISECONDS_PER_MINUTE * BUTTS_DATA_FETCHING_DELAY_MINUTES, initialDelay = 10000)
+    @Scheduled(fixedDelay = 1000000000000000000L)
     public void doParseButts() {
         if (!settings.isEmpty()) {
             log.info("Butts data fetching start");
             doParse(Integer.parseInt(settings.getProperty("maxButtsPageNumber")), buttsContent, BUTTS_URL_PART);
             log.info("Butts data fetching end");
         }
+    }
+
+    @Override
+    public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
+        taskRegistrar.addTriggerTask(
+                () -> {
+                    this.doParseBoobs();
+                    this.doParseButts();
+                },
+                (triggerContext) -> {
+                    Calendar cal = Calendar.getInstance();
+                    cal.add(Calendar.MINUTE, Integer.parseInt(settings.getProperty("openContentFetchingDelayInMinutes", "10")));
+                    log.info("Next settings open content fetching will be at {}", cal.getTime());
+                    return cal.getTime();
+                });
     }
 
     private void doParse(int pageMaxNumber, List<OpenBoobsContent> contents, String contentUrlPart) {
@@ -66,11 +77,11 @@ public class OpenContentParser {
             for (Element element : getPageElementsByKey(commonContentPage)) {
                 if (Integer.parseInt(settings.getProperty("minContentRank")) <= getContentRank(element)) {
                     contents.add(OpenBoobsContent.builder()
-                            .id(getContentId(element))
-                            .url(getConcretePageAddress(element))
-                            .type(contentUrlPart.contains("boobs") ? ContentType.BOOBS : ContentType.BUTTS)
-                            .rank(getContentRank(element))
-                            .build());
+                                         .id(getContentId(element))
+                                         .url(getConcretePageAddress(element))
+                                         .type(contentUrlPart.contains("boobs") ? ContentType.BOOBS : ContentType.BUTTS)
+                                         .rank(getContentRank(element))
+                                         .build());
                 }
             }
         }
@@ -85,14 +96,14 @@ public class OpenContentParser {
 
     private int getContentRank(Element element) {
         return Integer.parseInt(element.childNodes().get(1).childNode(3)
-                .childNode(0).toString().split("\n")[1]);
+                                        .childNode(0).toString().split("\n")[1]);
     }
 
     private int getContentId(Element element) {
         return Integer.parseInt(element.getElementsByTag("a").get(2)
-                .getElementsByAttribute("href")
-                .attr("href")
-                .split("/")[2]);
+                                        .getElementsByAttribute("href")
+                                        .attr("href")
+                                        .split("/")[2]);
     }
 
     private String defineCommonContentPageUrl(String contentUrlPart, int pageNum) {

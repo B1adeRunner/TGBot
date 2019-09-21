@@ -1,7 +1,13 @@
 <configuration>
     <!--Аппендеры -->
     <!--Файловый аппендер -->
-    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+    <appender name="SIZE_AND_TIME_BASED_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/botLog.%d{yyyy-MM-dd-HH-mm}.%i.log</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>1MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
         <encoder>
             <charset>UTF-8</charset>
             <Pattern>%date %level [%thread] %logger{10} [%file:%line] %msg%n</Pattern>
@@ -19,10 +25,10 @@
     <!-- Логгеры -->
     <!-- Корневой логгер -->
     <logger name="TGBot" level="info" additivity="false">
-        <appender-ref ref="FILE" />
+        <appender-ref ref="SIZE_AND_TIME_BASED_FILE"/>
     </logger>
 
     <root level="info">
-        <appender-ref ref="sout" />
+        <appender-ref ref="SIZE_AND_TIME_BASED_FILE"/>
     </root>
 </configuration>

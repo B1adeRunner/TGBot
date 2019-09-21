@@ -4,12 +4,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.ho.yaml.Yaml;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.annotation.SchedulingConfigurer;
+import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,9 +20,7 @@ import java.util.Properties;
 
 @Slf4j
 @Component
-public class BotConfigFilesRefreshingJob {
-    private static final long MILISECONDS_PER_MINUTE = 60000;
-
+public class BotConfigFilesRefreshingJob implements SchedulingConfigurer {
     public BotConfigFilesRefreshingJob(@Qualifier("permissions") List<String> permissions,
                                        @Qualifier("allCommands") List<String> allCommands,
                                        @Qualifier("privateUserCommands") List<String> privateUserCommands,
@@ -39,9 +40,9 @@ public class BotConfigFilesRefreshingJob {
     private volatile Map<String, String> botPhrases;
     private volatile Properties settings;
 
-    @Scheduled(fixedDelay = MILISECONDS_PER_MINUTE, initialDelay = 0)
+    @Scheduled(fixedDelay = 1000000000000000000L)
     public void updateConfigurations() {
-        try {
+        try (FileInputStream fileInputStream = new FileInputStream("resources/settings.properties")) {
             log.info("Start of bot configuration parsing");
             //TODO: вынести путь файлов в jvm переменные
             botCommands = Yaml.loadType(new File("resources/botCommands.yml"), ArrayList.class);
@@ -53,14 +54,23 @@ public class BotConfigFilesRefreshingJob {
             allCommands.clear();
             allCommands.addAll(tmpAllCmd);
             privateUserCommands.addAll((List<String>) (((Map) (botCommands.get(0))).get("privateUserCommands")));
-            FileInputStream fileInputStream = new FileInputStream("resources/settings.properties");
             settings.clear();
-            if (fileInputStream != null) {
-                settings.load(fileInputStream);
-            }
+            settings.load(fileInputStream);
             log.info("End of bot configuration parsing");
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Error while configuration parsing, " + e);
         }
+    }
+
+    @Override
+    public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
+        taskRegistrar.addTriggerTask(
+                this::updateConfigurations,
+                (triggerContext) -> {
+                    Calendar cal = Calendar.getInstance();
+                    cal.add(Calendar.MINUTE, Integer.parseInt(settings.getProperty("settingsRefreshingDelayInMinutes", "10")));
+                    log.info("Next settings refresh will be at {}", cal.getTime());
+                    return cal.getTime();
+                });
     }
 }
