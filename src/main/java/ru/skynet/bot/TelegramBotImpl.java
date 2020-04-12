@@ -41,7 +41,6 @@ public class TelegramBotImpl extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update message) {
         try {
-            log.info("Message received with text: {}", message.getMessage().getText());
             AnswerWrapper answer = analyser.analyse(message);
             //FIXME: костыль
             if (answer.getType().equals(AnswerType.BOT_API_METHOD)) {

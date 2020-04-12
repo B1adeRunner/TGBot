@@ -2,17 +2,24 @@ package ru.skynet.bot;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageCaption;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import ru.skynet.bot.core.AnswerType;
 import ru.skynet.bot.core.AnswerWrapper;
 import ru.skynet.bot.core.PrimitiveContent;
 import ru.skynet.bot.service.opencontent.ContentType;
 import ru.skynet.bot.service.opencontent.OpenBoobsContent;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -56,7 +63,19 @@ public class BotCommandsProcessor {
         buttsQueue = new ArrayBlockingQueue<>(bufferCapacity);
     }
 
+    private BotApiMethod callBackOpenContent(CallbackQuery callbackQuery) {
+        EditMessageCaption editMessageCaption = new EditMessageCaption();
+        editMessageCaption.setMessageId(callbackQuery.getMessage().getMessageId());
+        editMessageCaption.setChatId(String.valueOf(callbackQuery.getMessage().getChatId()));
+        editMessageCaption.setCaption(callbackQuery.getData());
+        return editMessageCaption;
+    }
+
     public AnswerWrapper commandProcess(Update message) {
+        if (message.hasCallbackQuery()) {
+            return new AnswerWrapper(AnswerType.BOT_API_METHOD, callBackOpenContent(message.getCallbackQuery()));
+        }
+
         boolean isVipChat = message.getMessage().getChat() != null &&
                 message.getMessage().getChat().getTitle() != null &&
                 permissions.contains(message.getMessage().getChat().getTitle());
@@ -129,10 +148,14 @@ public class BotCommandsProcessor {
     private PartialBotApiMethod sendOpenBoobsContent(Message msg) {
         ContentType contentType = definePrimitiveContent(msg);
         OpenBoobsContent content = fetchContent(contentType);
+        List<List<InlineKeyboardButton>> buttons = Collections.singletonList(
+                Arrays.asList(new InlineKeyboardButton("+").setCallbackData("rank: " + (content.getRank() + 1) + ", your vote: +"),
+                              new InlineKeyboardButton("-").setCallbackData("rank: " + (content.getRank() - 1) + ", your vote: -")));
         SendPhoto photo = new SendPhoto();
         photo.setChatId(msg.getChatId());
         photo.setPhoto(content.getUrl());
         photo.setCaption("rank: " + content.getRank());
+        photo.setReplyMarkup(new InlineKeyboardMarkup().setKeyboard(buttons));
         return photo;
     }
 

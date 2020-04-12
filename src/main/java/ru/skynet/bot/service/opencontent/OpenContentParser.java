@@ -12,6 +12,7 @@ import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Properties;
@@ -63,29 +64,32 @@ public class OpenContentParser implements SchedulingConfigurer {
                 (triggerContext) -> {
                     Calendar cal = Calendar.getInstance();
                     cal.add(Calendar.MINUTE, Integer.parseInt(settings.getProperty("openContentFetchingDelayInMinutes", "10")));
-                    log.info("Next settings open content fetching will be at {}", cal.getTime());
+                    log.info("Next open content fetching will be at {}", cal.getTime());
                     return cal.getTime();
                 });
     }
 
     private void doParse(int pageMaxNumber, List<OpenBoobsContent> contents, String contentUrlPart) {
+        List<OpenBoobsContent> tmpContents = new ArrayList<>();
         for (int commonPageNum = 1; commonPageNum <= pageMaxNumber; commonPageNum++) {
             if (commonPageNum % 100 == 0) {
-                log.info("Content type: " + contents.get(0).getType() + ". " + commonPageNum + " pages processed");
+                log.info("Content type: " + tmpContents.get(0).getType() + " " + commonPageNum + " pages processed");
             }
             Document commonContentPage = defineCommonContentPageList(defineCommonContentPageUrl(contentUrlPart, commonPageNum));
             for (Element element : getPageElementsByKey(commonContentPage)) {
                 if (Integer.parseInt(settings.getProperty("minContentRank")) <= getContentRank(element)) {
-                    contents.add(OpenBoobsContent.builder()
-                                         .id(getContentId(element))
-                                         .url(getConcretePageAddress(element))
-                                         .type(contentUrlPart.contains("boobs") ? ContentType.BOOBS : ContentType.BUTTS)
-                                         .rank(getContentRank(element))
-                                         .build());
+                    tmpContents.add(OpenBoobsContent.builder()
+                                            .id(getContentId(element))
+                                            .url(getConcretePageAddress(element))
+                                            .type(contentUrlPart.contains("boobs") ? ContentType.BOOBS : ContentType.BUTTS)
+                                            .rank(getContentRank(element))
+                                            .build());
                 }
             }
         }
-        contents.forEach(content -> log.debug(content.toString()));
+        tmpContents.forEach(content -> log.debug(content.toString()));
+        contents.clear();
+        contents.addAll(tmpContents);
     }
 
     private String getConcretePageAddress(Element element) {
